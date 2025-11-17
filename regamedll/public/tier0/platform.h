@@ -30,7 +30,12 @@
 
 #include "osconfig.h"
 
-#include <malloc.h> // need this for _alloca
+#if defined(_WIN32)
+#include <malloc.h> // _alloca on Windows
+#else
+#include <alloca.h> // alloca on POSIX (glibc/musl)
+#endif
+
 #include <string.h> // need this for memset
 
 #include "archtypes.h"
@@ -42,7 +47,13 @@
 
 // Used to step into the debugger
 #if defined(__GNUC__) || defined(__clang__)
-	#define DebuggerBreak() __asm__ __volatile__("int3;")
+	#if defined(__i386__) || defined(__x86_64__)
+		#define DebuggerBreak() __asm__ __volatile__("int3;")
+	#elif defined(__aarch64__) || defined(__arm__)
+		#define DebuggerBreak() __builtin_trap()
+	#else
+		#define DebuggerBreak() __builtin_trap()
+	#endif
 #else
 	#define DebuggerBreak() __asm { int 3 }
 #endif
