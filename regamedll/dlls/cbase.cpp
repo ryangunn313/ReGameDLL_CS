@@ -207,12 +207,28 @@ void RemoveEntityHashValue(entvars_t *pev, const char *value, hash_types_e field
 	int pevIndex;
 	int count;
 
-	count = stringsHashTable.Count();
-	hash = CaseInsensitiveHash(value, count);
-	pevIndex = ENTINDEX(ENT(pev));
-
+	// Defensive guards; valid CLASSNAME cases behave as before.
 	if (fieldType != CLASSNAME)
 		return;
+
+	if (!pev)
+		return;
+
+	if (!value || !*value)
+		return;
+
+	if (FStringNull(pev->classname))
+		return;
+
+	count = stringsHashTable.Count();
+	if (count <= 0)
+		return;
+
+	hash = CaseInsensitiveHash(value, count);
+	if (hash < 0 || hash >= count)
+		return;	
+
+	pevIndex = ENTINDEX(ENT(pev));
 
 	hash = hash % count;
 	item = &stringsHashTable[hash];
