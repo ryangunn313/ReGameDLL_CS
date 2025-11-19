@@ -120,14 +120,27 @@ void AddEntityHashValue(entvars_t *pev, const char *value, hash_types_e fieldTyp
 	int hash, pevIndex;
 	entvars_t *pevtemp;
 
+	//  Basic sanity checks. No behavior change in valid cases.
 	if (fieldType != CLASSNAME)
+		return;
+
+	if (!pev)
+		return;
+
+	if (!value || !*value)
 		return;
 
 	if (FStringNull(pev->classname))
 		return;
 
 	count = stringsHashTable.Count();
+	if (count <= 0)
+		return;
+
 	hash = CaseInsensitiveHash(value, count);
+	if (hash < 0 || hash >= count)
+		return;
+
 	pevIndex = ENTINDEX(ENT(pev));
 	item = &stringsHashTable[hash];
 
@@ -278,12 +291,18 @@ C_DLLEXPORT int GetEntityAPI(DLL_FUNCTIONS *pFunctionTable, int interfaceVersion
 		return 0;
 
 	Q_memcpy(pFunctionTable, &gFunctionTable, sizeof(DLL_FUNCTIONS));
-	stringsHashTable.AddMultipleToTail(2048);
-	for (int i = 0; i < stringsHashTable.Count(); i++)
+
+	// Ensure the hash table is allocated exactly once.
+	if (stringsHashTable.Count() == 0)
 	{
-		stringsHashTable[i].next = nullptr;
+		stringsHashTable.AddMultipleToTail(2048);
+		for (int i = 0; i < stringsHashTable.Count(); i++)
+		{
+			stringsHashTable[i].next = nullptr;
+		}
 	}
 
+	// Always start from a clean state.
 	EmptyEntityHashTable();
 	return 1;
 }
