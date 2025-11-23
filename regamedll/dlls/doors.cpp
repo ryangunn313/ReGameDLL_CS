@@ -515,6 +515,7 @@ void CBaseDoor::DoorGoUp()
 				EMIT_SOUND(ENT(pev), CHAN_STATIC, (char *)STRING(pev->noiseMoving), VOL_NORM, ATTN_NORM);
 			}
 
+#ifndef CSTRIKE
 			if (TheBots)
 			{
 #ifdef REGAMEDLL_FIXES
@@ -524,6 +525,8 @@ void CBaseDoor::DoorGoUp()
 					TheBots->OnEvent(EVENT_DOOR, m_hActivator);
 				}
 			}
+#endif
+
 		}
 	}
 
@@ -690,6 +693,7 @@ void CBaseDoor::DoorGoDown()
 				EMIT_SOUND(ENT(pev), CHAN_STATIC, (char *)STRING(pev->noiseMoving), VOL_NORM, ATTN_NORM);
 			}
 
+#ifndef CSTRIKE
 			if (TheBots)
 			{
 #ifdef REGAMEDLL_FIXES
@@ -699,6 +703,8 @@ void CBaseDoor::DoorGoDown()
 					TheBots->OnEvent(EVENT_DOOR, m_hActivator);
 				}
 			}
+#endif
+
 		}
 	}
 

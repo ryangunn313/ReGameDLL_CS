@@ -1405,10 +1405,12 @@ VectorRef CBaseEntity::__API_HOOK(FireBullets3)(VectorRef vecSrc, VectorRef vecD
 #endif
 		UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(pev), &tr);
 
+#ifndef CSTRIKE
 		if (TheBots && tr.flFraction != 1.0f)
 		{
 			TheBots->OnEvent(EVENT_BULLET_IMPACT, this, (CBaseEntity *)&tr.vecEndPos);
 		}
+#endif
 
 		char cTextureType = UTIL_TextureHit(&tr, vecSrc, vecEnd);
 		bool bSparks = false;

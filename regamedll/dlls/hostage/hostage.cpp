@@ -448,10 +448,13 @@ void CHostage::IdleThink()
 
 			if (m_bRescueMe)
 			{
+
+#ifndef CSTRIKE
 				if (TheBots)
 				{
 					TheBots->OnEvent(EVENT_HOSTAGE_RESCUED, pPlayer, this);
 				}
+#endif
 
 				if (TheCareerTasks && CSGameRules()->IsCareer() && pPlayer && !pPlayer->IsBot())
 				{
@@ -675,10 +678,12 @@ BOOL CHostage::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float
 		{
 			pAttacker->AddAccount(-20 * int(flActualDamage), RT_HOSTAGE_DAMAGED);
 
+#ifndef CSTRIKE
 			if (TheBots)
 			{
 				TheBots->OnEvent(EVENT_HOSTAGE_DAMAGED, this, pAttacker);
 			}
+#endif
 
 			ClientPrint(pAttacker->pev, HUD_PRINTCENTER, "#Injured_Hostage");
 			if (!(pAttacker->m_flDisplayHistory & DHF_HOSTAGE_INJURED))
@@ -708,10 +713,12 @@ BOOL CHostage::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float
 		pev->deadflag = DEAD_DEAD;
 		pev->solid = SOLID_NOT;
 
+#ifndef CSTRIKE
 		if (TheBots)
 		{
 			TheBots->OnEvent(EVENT_HOSTAGE_KILLED, this, pAttacker);
 		}
+#endif
 
 		if (m_improv)
 		{
@@ -919,10 +926,13 @@ void CHostage::Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useTy
 			{
 				m_improv->Follow(pPlayer);
 
+#ifndef CSTRIKE
 				if (TheBots)
 				{
 					TheBots->OnEvent(EVENT_HOSTAGE_USED, pActivator);
 				}
+#endif
+
 			}
 		}
 		else
@@ -947,10 +957,14 @@ void CHostage::Use(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useTy
 			if (m_State == FOLLOW)
 			{
 				PlayFollowRescueSound();
+
+#ifndef CSTRIKE
 				if (TheBots)
 				{
 					TheBots->OnEvent(EVENT_HOSTAGE_USED, pActivator);
 				}
+#endif
+
 			}
 		}
 
@@ -1670,10 +1684,14 @@ float SimpleChatter::PlaySound(CBaseEntity *pEntity, HostageChatterType type)
 
 	if (type == HOSTAGE_CHATTER_CALL_TO_RESCUER)
 	{
+
+#ifndef CSTRIKE
 		if (TheBots)
 		{
 			TheBots->OnEvent(EVENT_HOSTAGE_CALLED_FOR_HELP, pHostage);
 		}
+#endif
+
 	}
 
 	return duration;

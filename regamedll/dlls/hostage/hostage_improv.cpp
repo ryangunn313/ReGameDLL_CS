@@ -1051,12 +1051,16 @@ void CHostageImprov::UpdateGrenadeReactions()
 {
 	if (m_coughTimer.IsElapsed())
 	{
+
+#ifndef CSTRIKE
 		if (TheBots->IsInsideSmokeCloud(&GetCentroid()))
 		{
 			m_coughTimer.Start(RANDOM_FLOAT(1, 3));
 			Chatter(HOSTAGE_CHATTER_COUGH);
 			Frighten(SCARED);
 		}
+#endif
+
 	}
 
 	if (m_grenadeTimer.IsElapsed())
