@@ -1043,13 +1043,10 @@ BOOL EXT_FUNC CBasePlayer::__API_HOOK(TakeDamage)(entvars_t *pevInflictor, entva
 
 		if (bTookDamage)
 		{
-
-#ifndef CSTRIKE
 			if (TheBots)
 			{
 				TheBots->OnEvent(EVENT_PLAYER_TOOK_DAMAGE, this, pAttack);
 			}
-#endif
 
 			if (TheCareerTasks)
 			{
@@ -1304,13 +1301,10 @@ BOOL EXT_FUNC CBasePlayer::__API_HOOK(TakeDamage)(entvars_t *pevInflictor, entva
 
 	if (bTookDamage)
 	{
-
-#ifndef CSTRIKE
 		if (TheBots)
 		{
 			TheBots->OnEvent(EVENT_PLAYER_TOOK_DAMAGE, this, pAttack);
 		}
-#endif
 
 		if (TheCareerTasks)
 		{
@@ -2243,12 +2237,10 @@ void EXT_FUNC CBasePlayer::__API_HOOK(Killed)(entvars_t *pevAttacker, int iGib)
 
 	CBaseEntity *pAttackerEntity = CBaseEntity::Instance(pevAttacker);
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_PLAYER_DIED, this, pAttackerEntity);
 	}
-#endif
 
 	if (CSGameRules()->IsCareer())
 	{
@@ -2695,14 +2687,10 @@ void EXT_FUNC CBasePlayer::__API_HOOK(SetAnimation)(PLAYER_ANIM playerAnim)
 			else
 			{
 				m_IdealActivity = ACT_HOP;
-
-#ifndef CSTRIKE
 				if (TheBots)
 				{
 					TheBots->OnEvent(EVENT_PLAYER_JUMPED, this);
 				}
-#endif
-
 			}
 			break;
 		}
@@ -2729,14 +2717,10 @@ void EXT_FUNC CBasePlayer::__API_HOOK(SetAnimation)(PLAYER_ANIM playerAnim)
 			else
 			{
 				m_IdealActivity = ACT_RANGE_ATTACK1;
-
-#ifndef CSTRIKE
 				if (TheBots)
 				{
 					TheBots->OnEvent(EVENT_WEAPON_FIRED, this);
 				}
-#endif
-
 			}
 			break;
 		}
@@ -2747,14 +2731,10 @@ void EXT_FUNC CBasePlayer::__API_HOOK(SetAnimation)(PLAYER_ANIM playerAnim)
 			else
 			{
 				m_IdealActivity = ACT_RANGE_ATTACK2;
-
-#ifndef CSTRIKE
 				if (TheBots)
 				{
 					TheBots->OnEvent(EVENT_WEAPON_FIRED, this);
 				}
-#endif
-
 			}
 			break;
 		}
@@ -2765,14 +2745,10 @@ void EXT_FUNC CBasePlayer::__API_HOOK(SetAnimation)(PLAYER_ANIM playerAnim)
 			else
 			{
 				m_IdealActivity = ACT_RELOAD;
-
-#ifndef CSTRIKE
 				if (TheBots)
 				{
 					TheBots->OnEvent(EVENT_WEAPON_RELOADED, this);
 				}
-#endif
-
 			}
 			break;
 		}
@@ -2935,14 +2911,10 @@ void EXT_FUNC CBasePlayer::__API_HOOK(SetAnimation)(PLAYER_ANIM playerAnim)
 						//if (speed > 150.0f)
 						if (pev->velocity.Length2D() > 150.0f)
 						{
-
-#ifndef CSTRIKE
 							if (TheBots)
 							{
 								TheBots->OnEvent(EVENT_PLAYER_FOOTSTEP, this);
 							}
-#endif
-
 						}
 					}
 				}
@@ -4109,13 +4081,10 @@ void EXT_FUNC CBasePlayer::__API_HOOK(StartDeathCam)()
 
 	StartObserver(pev->origin, pev->angles);
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_DEATH_CAMERA_START, this);
 	}
-#endif
-
 }
 
 LINK_HOOK_CLASS_VOID_CHAIN(CBasePlayer, StartObserver, (Vector &vecPosition, Vector &vecViewAngle), vecPosition, vecViewAngle)
@@ -8227,12 +8196,7 @@ void EXT_FUNC CBasePlayer::__API_HOOK(UpdateStatusBar)()
 		if (!FNullEnt(tr.pHit))
 		{
 			CBaseEntity *pEntity = CBaseEntity::Instance(tr.pHit);
-
-#ifndef CSTRIKE
 			bool isVisiblePlayer = ((TheBots == nullptr || !TheBots->IsLineBlockedBySmoke(&pev->origin, &pEntity->pev->origin)) && pEntity->Classify() == CLASS_PLAYER);
-#else
-			bool isVisiblePlayer = (pEntity->Classify() == CLASS_PLAYER);
-#endif
 
 			if (gpGlobals->time >= m_blindUntilTime && isVisiblePlayer)
 			{
@@ -8649,12 +8613,10 @@ void CBasePlayer::__API_HOOK(SwitchTeam)()
 		WRITE_STRING(GetTeamName(m_iTeam));
 	MESSAGE_END();
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_PLAYER_CHANGED_TEAM, this);
 	}
-#endif
 
 	UpdateLocation(true);
 

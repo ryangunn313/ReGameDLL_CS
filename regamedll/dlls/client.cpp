@@ -339,7 +339,6 @@ void EXT_FUNC ClientDisconnect(edict_t *pEntity)
 		g_pGameRules->ClientDisconnected(pEntity);
 	}
 
-#ifndef CSTRIKE
 #ifndef REGAMEDLL_FIXES
 	if (TheBots && pPlayer && pPlayer->IsBot())
 #else
@@ -349,8 +348,6 @@ void EXT_FUNC ClientDisconnect(edict_t *pEntity)
 	{
 		TheBots->ClientDisconnect(pPlayer);
 	}
-#endif
-
 }
 
 void respawn(entvars_t *pev, BOOL fCopyCorpse)
@@ -1934,12 +1931,10 @@ BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 			pPlayer->m_pIntroCamera = nullptr;
 			pPlayer->m_bTeamChanged = true;
 
-#ifndef CSTRIKE
 			if (TheBots)
 			{
 				TheBots->OnEvent(EVENT_PLAYER_CHANGED_TEAM, pPlayer);
 			}
-#endif
 
 			pPlayer->TeamChangeUpdate();
 
@@ -2130,12 +2125,10 @@ BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 	oldTeam = pPlayer->m_iTeam;
 	pPlayer->m_iTeam = team;
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_PLAYER_CHANGED_TEAM, pPlayer);
 	}
-#endif
 
 	pPlayer->TeamChangeUpdate();
 
@@ -2183,13 +2176,10 @@ void Radio1(CBasePlayer *pPlayer, int slot)
 		break;
 	}
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent((GameEventType)(EVENT_START_RADIO_1 + slot), pPlayer);
 	}
-#endif
-
 }
 
 void Radio2(CBasePlayer *pPlayer, int slot)
@@ -2225,13 +2215,10 @@ void Radio2(CBasePlayer *pPlayer, int slot)
 		break;
 	}
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent((GameEventType)(EVENT_START_RADIO_2 + slot), pPlayer);
 	}
-#endif
-
 }
 
 void Radio3(CBasePlayer *pPlayer, int slot)
@@ -2280,13 +2267,10 @@ void Radio3(CBasePlayer *pPlayer, int slot)
 		break;
 	}
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent((GameEventType)(EVENT_START_RADIO_3 + slot), pPlayer);
 	}
-#endif
-
 }
 
 LINK_HOOK_CHAIN(bool, BuyGunAmmo, (CBasePlayer *pPlayer, CBasePlayerItem *weapon, bool bBlinkMoney), pPlayer, weapon, bBlinkMoney)
@@ -3356,13 +3340,11 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 		if (g_pGameRules->ClientCommand_DeadOrAlive(GetClassPtr<CCSPlayer>((CBasePlayer *)pev), pcmd))
 			return;
 
-#ifndef CSTRIKE
 		if (TheBots)
 		{
 			if (TheBots->ClientCommand(GetClassPtr<CCSPlayer>((CBasePlayer *)pev), pcmd))
 				return;
 		}
-#endif
 
 		if (FStrEq(pcmd, "mp_debug"))
 		{
@@ -3588,13 +3570,10 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 					ShowVGUIMenu(pPlayer, VGUI_Menu_Buy, (MENU_KEY_1 | MENU_KEY_2 | MENU_KEY_3 | MENU_KEY_4 | MENU_KEY_5 | MENU_KEY_6 | MENU_KEY_7 | MENU_KEY_8 | MENU_KEY_0), "#Buy");
 					pPlayer->m_iMenu = Menu_Buy;
 
-#ifndef CSTRIKE
 					if (TheBots)
 					{
 						TheBots->OnEvent(EVENT_TUTOR_BUY_MENU_OPENNED);
 					}
-#endif
-
 				}
 			}
 #ifndef REGAMEDLL_FIXES
@@ -3769,12 +3748,10 @@ void EXT_FUNC ServerDeactivate()
 	g_pGameRules->ServerDeactivate();
 	CLocalNav::Reset();
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->ServerDeactivate();
 	}
-#endif
 
 	if (g_pHostages)
 	{
@@ -3844,12 +3821,10 @@ void EXT_FUNC ServerActivate(edict_t *pEdictList, int edictCount, int clientMax)
 		g_pGameRules->CheckMapConditions();
 	}
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->ServerActivate();
 	}
-#endif
 
 	if (g_pHostages)
 	{
@@ -3913,11 +3888,9 @@ void EXT_FUNC StartFrame()
 	gpGlobals->teamplay = 1.0f;
 	g_iSkillLevel = g_pskill ? (int)g_pskill->value : 0;
 
-#ifndef CSTRIKE
 	if (TheBots) {
 		TheBots->StartFrame();
 	}
-#endif
 
 	if (TheTutor) {
 		TheTutor->StartFrame(gpGlobals->time);

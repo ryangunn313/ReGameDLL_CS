@@ -168,13 +168,10 @@ void CHalfLifeTraining::PlayerThink(CBasePlayer *pPlayer)
 	pPlayer->pev->scale = pPlayer->m_iAccount;
 	pPlayer->pev->ideal_yaw = pPlayer->m_bHasDefuser;
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_PLAYER_CHANGED_TEAM, pPlayer);
 	}
-#endif
-
 }
 
 void CHalfLifeTraining::PlayerSpawn(CBasePlayer *pPlayer)

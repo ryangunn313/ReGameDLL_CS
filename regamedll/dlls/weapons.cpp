@@ -2135,13 +2135,10 @@ void CWeaponBox::Touch(CBaseEntity *pOther)
 					TheCSBots()->SetLooseBomb(nullptr);
 				}
 
-#ifndef CSTRIKE
 				if (TheBots)
 				{
 					TheBots->OnEvent(EVENT_BOMB_PICKED_UP, pPlayer);
 				}
-#endif
-
 			}
 
 			if (i >= PRIMARY_WEAPON_SLOT && i <= PISTOL_SLOT && pPlayer->m_rgpPlayerItems[i])

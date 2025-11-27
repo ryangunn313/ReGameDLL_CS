@@ -52,12 +52,10 @@ void CGrenade::__API_HOOK(Explode)(TraceResult *pTrace, int bitsDamageType)
 #endif
 	entvars_t *pevOwner = VARS(pev->owner);
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_FLASHBANG_GRENADE_EXPLODED, CBaseEntity::Instance(pev->owner), (CBaseEntity *)&pev->origin);
 	}
-#endif
 
 	// can't traceline attack owner if this is set
 	pev->owner = nullptr;
@@ -286,12 +284,10 @@ void CGrenade::__API_HOOK(Explode3)(TraceResult *pTrace, int bitsDamageType)
 #endif
 	entvars_t *pevOwner = VARS(pev->owner);
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_HE_GRENADE_EXPLODED, CBaseEntity::Instance(pev->owner));
 	}
-#endif
 
 	pev->owner = nullptr;
 	RadiusDamage(pev, pevOwner, pev->dmg, CLASS_NONE, bitsDamageType);
@@ -530,13 +526,10 @@ void CGrenade::SG_Smoke()
 	{
 		pev->effects |= EF_NODRAW;
 
-#ifndef CSTRIKE
 		if (TheBots)
 		{
 			TheBots->RemoveGrenade(this);
 		}
-#endif
-
 		UTIL_Remove(this);
 	}
 }
@@ -585,13 +578,11 @@ void CGrenade::__API_HOOK(SG_Detonate)()
 
 	UTIL_TraceLine(vecSpot, vecSpot + Vector(0, 0, -40), ignore_monsters, ENT(pev), &tr);
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_SMOKE_GRENADE_EXPLODED, CBaseEntity::Instance(pev->owner));
 		TheBots->AddGrenade(WEAPON_SMOKEGRENADE, this);
 	}
-#endif
 
 	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/sg_explode.wav", VOL_NORM, ATTN_NORM);
 
@@ -1031,12 +1022,10 @@ void CGrenade::__API_HOOK(DefuseBombStart)(CBasePlayer *pPlayer)
 	// freeze the player in place while defusing
 	SET_CLIENT_MAXSPEED(pPlayer->edict(), 1);
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_BOMB_DEFUSING, pPlayer);
 	}
-#endif
 
 	if (CSGameRules()->IsCareer() && TheCareerTasks)
 	{
@@ -1102,12 +1091,10 @@ void CGrenade::__API_HOOK(DefuseBombEnd)(CBasePlayer *pPlayer, bool bDefused)
 				Broadcast("BOMBDEF");
 			}
 
-#ifndef CSTRIKE
 			if (TheBots)
 			{
 				TheBots->OnEvent(EVENT_BOMB_DEFUSED, (CBaseEntity *)m_pBombDefuser);
 			}
-#endif
 
 			MESSAGE_BEGIN(MSG_SPEC, SVC_DIRECTOR);
 				WRITE_BYTE(9);
@@ -1183,14 +1170,11 @@ void CGrenade::__API_HOOK(DefuseBombEnd)(CBasePlayer *pPlayer, bool bDefused)
 			pPlayer->SetProgressBarTime(0);
 #endif
 
-#ifndef CSTRIKE
 			// tell the bots someone has aborted defusing
 			if (TheBots)
 			{
 				TheBots->OnEvent(EVENT_BOMB_DEFUSE_ABORTED);
 			}
-#endif
-
 		}
 	}
 	else
@@ -1211,14 +1195,11 @@ void CGrenade::__API_HOOK(DefuseBombEnd)(CBasePlayer *pPlayer, bool bDefused)
 		m_bStartDefuse = false;
 		m_flDefuseCountDown = 0;
 
-#ifndef CSTRIKE
 		// tell the bots someone has aborted defusing
 		if (TheBots)
 		{
 			TheBots->OnEvent(EVENT_BOMB_DEFUSE_ABORTED);
 		}
-#endif
-
 	}
 }
 
@@ -1483,15 +1464,12 @@ void CGrenade::C4Think()
 		m_flNextBeep = gpGlobals->time + 1.4f;
 		EMIT_SOUND(ENT(pev), CHAN_VOICE, m_sBeepName, VOL_NORM, m_fAttenu);
 
-#ifndef CSTRIKE
 		// let the bots hear the bomb beeping
 		// BOTPORT: Emit beep events at same time as client effects
 		if (TheBots)
 		{
 			TheBots->OnEvent(EVENT_BOMB_BEEP, this);
 		}
-#endif
-
 	}
 
 	if (gpGlobals->time >= m_flNextBlink)
@@ -1517,13 +1495,10 @@ void CGrenade::C4Think()
 	if (gpGlobals->time >= m_flC4Blow)
 #endif
 	{
-
-#ifndef CSTRIKE
 		if (TheBots)
 		{
 			TheBots->OnEvent(EVENT_BOMB_EXPLODED);
 		}
-#endif
 
 		MESSAGE_BEGIN(MSG_ALL, gmsgScenarioIcon);
 			WRITE_BYTE(0);

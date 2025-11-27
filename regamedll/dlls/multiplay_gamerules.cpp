@@ -225,15 +225,11 @@ void CHalfLifeMultiplay::EndRoundMessage(const char *sentence, ScenarioEventEndR
 		case ROUND_HOSTAGE_NOT_RESCUED:
 		case ROUND_VIP_NOT_ESCAPED:
 			team = GetTeam(TERRORIST);
-
-#ifndef CSTRIKE
 			// tell bots the terrorists won the round
 			if (TheBots)
 			{
 				TheBots->OnEvent(EVENT_TERRORISTS_WIN);
 			}
-#endif
-
 			break;
 		case ROUND_VIP_ESCAPED:
 		case ROUND_CTS_PREVENT_ESCAPE:
@@ -244,27 +240,19 @@ void CHalfLifeMultiplay::EndRoundMessage(const char *sentence, ScenarioEventEndR
 		case ROUND_TARGET_SAVED:
 		case ROUND_TERRORISTS_NOT_ESCAPED:
 			team = GetTeam(CT);
-
-#ifndef CSTRIKE
 			// tell bots the CTs won the round
 			if (TheBots)
 			{
 				TheBots->OnEvent(EVENT_CTS_WIN);
 			}
-#endif
-
 			break;
 		default:
 			bTeamTriggered = false;
-
-#ifndef CSTRIKE
 			// tell bots the round was a draw
 			if (TheBots)
 			{
 				TheBots->OnEvent(EVENT_ROUND_DRAW);
 			}
-#endif
-
 			break;
 		}
 
@@ -1065,13 +1053,10 @@ bool EXT_FUNC CHalfLifeMultiplay::NeededPlayersCheck(float tmDelay)
 	TerminateRound(tmDelay, WINSTATUS_DRAW);
 
 	m_bGameStarted = true;
-
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_GAME_COMMENCE);
 	}
-#endif
 
 	return true;
 }
@@ -1126,13 +1111,11 @@ bool EXT_FUNC CHalfLifeMultiplay::VIP_Escaped(float tmDelay)
 	EndRoundMessage("#VIP_Escaped", ROUND_VIP_ESCAPED);
 	TerminateRound(tmDelay, WINSTATUS_CTS);
 
-#ifndef CSTRIKE
 	// tell the bots the VIP got out
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_VIP_ESCAPED);
 	}
-#endif
 
 	if (IsCareer())
 	{
@@ -1157,13 +1140,11 @@ bool EXT_FUNC CHalfLifeMultiplay::VIP_Died(float tmDelay)
 	EndRoundMessage("#VIP_Assassinated", ROUND_VIP_ASSASSINATED);
 	TerminateRound(tmDelay, WINSTATUS_TERRORISTS);
 
-#ifndef CSTRIKE
 	// tell the bots the VIP was killed
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_VIP_ASSASSINATED);
 	}
-#endif
 
 	if (IsCareer())
 	{
@@ -1467,13 +1448,11 @@ bool CHalfLifeMultiplay::Hostage_Rescue(float tmDelay)
 	EndRoundMessage("#All_Hostages_Rescued", ROUND_ALL_HOSTAGES_RESCUED);
 	TerminateRound(tmDelay, WINSTATUS_CTS);
 
-#ifndef CSTRIKE
 	// tell the bots all the hostages have been rescued
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_ALL_HOSTAGES_RESCUED);
 	}
-#endif
 
 	if (IsCareer())
 	{
@@ -1695,13 +1674,11 @@ LINK_HOOK_CLASS_VOID_CUSTOM_CHAIN2(CHalfLifeMultiplay, CSGameRules, RestartRound
 
 void EXT_FUNC CHalfLifeMultiplay::__API_HOOK(RestartRound)()
 {
-#ifndef CSTRIKE
 	// tell bots that the round is restarting
 	if (TheBots)
 	{
 		TheBots->RestartRound();
 	}
-#endif
 
 	if (g_pHostages)
 	{
@@ -1847,13 +1824,10 @@ void EXT_FUNC CHalfLifeMultiplay::__API_HOOK(RestartRound)()
 			pPlayer->Reset();
 		}
 
-#ifndef CSTRIKE
 		if (TheBots)
 		{
 			TheBots->OnEvent(EVENT_NEW_MATCH);
 		}
-#endif
-
 	}
 
 	m_bFreezePeriod = TRUE;
@@ -2102,12 +2076,10 @@ void EXT_FUNC CHalfLifeMultiplay::__API_HOOK(RestartRound)()
 		GiveDefuserToRandomPlayer();
 #endif
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_BUY_TIME_START);
 	}
-#endif
 
 	// Reset game variables
 	m_flIntermissionEndTime = 0;
@@ -2893,12 +2865,10 @@ void EXT_FUNC CHalfLifeMultiplay::OnRoundFreezeEnd()
 		plr->SyncRoundTimer();
 	}
 
-#ifndef CSTRIKE
 	if (TheBots)
 	{
 		TheBots->OnEvent(EVENT_ROUND_START);
 	}
-#endif
 
 	if (TheCareerTasks)
 	{
