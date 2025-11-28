@@ -76,6 +76,14 @@ void InstallBotControl()
 	if (TheBots)
 	{
 		delete TheBots;
+		TheBots = nullptr;
+	}
+
+	const char *profileDb = CVAR_GET_STRING("bot_profile_db");
+	if (!g_pFileSystem || !g_pFileSystem->FileExists(profileDb))
+	{
+		ALERT(at_console, "CSBots disabled: missing %s\n", profileDb); // TheBots will remain nullptr
+		return;
 	}
 
 	TheBots = new CCSBotManager;
