@@ -30,11 +30,6 @@ option(XASH_COMPAT "Enable Xash3D FWGS compatiblity (support for it's 64-bit ABI
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Always build shared targets as PIC on Unix (safe for all arch, incl. AArch64)
-if(UNIX)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif()
-
 # Avoid -rdynamic -fPIC options
 if (NOT XASH_COMPAT)
 	set(CMAKE_SHARED_LIBRARY_CXX_FLAGS "")
@@ -49,18 +44,16 @@ if (NOT DEBUG)
 	set(LINK_FLAGS "-s")
 endif()
 
-# Only consider -m32 on 64-bit x86/amd64 hosts with a native x86 compiler
-if (CMAKE_SIZEOF_VOID_P EQUAL 8
-    AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i.86)$"
-    AND NOT CMAKE_CXX_COMPILER MATCHES "aarch64")
-    if (XASH_COMPAT)
-        set(COMPILE_FLAGS "${COMPILE_FLAGS} -DXASH_64BIT")
-    else()
-        set(COMPILE_FLAGS "${COMPILE_FLAGS} -m32")
-        set(LINK_FLAGS "${LINK_FLAGS} -m32")
-        list(APPEND LINK_LIBS aelf32)
-        set(CMAKE_SIZEOF_VOID_P 4)
-    endif()
+# add -m32 flag only on 64-bit systems, if building for 64-bit wasn't enabled with XASH_COMPAT
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+	if (XASH_COMPAT)
+		set(COMPILE_FLAGS "${COMPILE_FLAGS} -DXASH_64BIT")
+	else()
+		set(COMPILE_FLAGS "${COMPILE_FLAGS} -m32")
+		set(LINK_FLAGS "${LINK_FLAGS} -m32")
+		list(APPEND LINK_LIBS aelf32)
+		set(CMAKE_SIZEOF_VOID_P 4)
+	endif()
 endif()
 
 if(XASH_COMPAT)
@@ -110,9 +103,11 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
 		set(LINK_FLAGS "${LINK_FLAGS} -ipo")
 	endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	if ((XASH_AMD64 OR XASH_X86 OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i.86)$")
-            AND NOT CMAKE_CXX_COMPILER MATCHES "aarch64")
-		set(COMPILE_FLAGS "${COMPILE_FLAGS} -mtune=generic -msse3")
+	if (NOT XASH_COMPAT OR XASH_AMD64 OR XASH_X86)
+		# Produce code optimized for the most common IA32/AMD64/EM64T processors.
+		# As new processors are deployed in the marketplace, the behavior of this option will change.
+		set(COMPILE_FLAGS "${COMPILE_FLAGS} \
+			-mtune=generic -msse3")
 	endif()
 
 	set(COMPILE_FLAGS "${COMPILE_FLAGS} \
@@ -432,7 +427,8 @@ if (XASH_COMPAT)
 else()
 	set_target_properties(regamedll PROPERTIES
 		OUTPUT_NAME cs
-		PREFIX "")
+		PREFIX ""
+		POSITION_INDEPENDENT_CODE OFF)
 endif()
 
 install(TARGETS regamedll
