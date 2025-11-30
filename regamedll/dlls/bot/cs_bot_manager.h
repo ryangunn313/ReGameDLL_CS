@@ -268,7 +268,7 @@ inline CCSBotManager *TheCSBots()
 // Determine whether bots can be used or not
 inline bool AreBotsAllowed()
 {
-	return g_bAllowedCSBot;
+	return g_bAllowedCSBot && (TheBots != nullptr);
 }
 
 void PrintAllEntities();
