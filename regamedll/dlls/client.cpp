@@ -1,4 +1,5 @@
 #include "precompiled.h"
+#include "debuglog.h"
 
 int gmsgWeapPickup = 0;
 int gmsgHudText = 0;
@@ -389,6 +390,17 @@ LINK_HOOK_VOID_CHAIN(ShowMenu, (CBasePlayer *pPlayer, int bitsValidSlots, int nD
 
 void EXT_FUNC __API_HOOK(ShowMenu)(CBasePlayer *pPlayer, int bitsValidSlots, int nDisplayTime, BOOL fNeedMore, char *pszText)
 {
+DBG("ShowMenu: ent=%d bits=0x%x time=%d needMore=%d joinState=%d menu=%d team=%d text=\"%.40s\"",
+    pPlayer->entindex(),
+    bitsValidSlots,
+    nDisplayTime,
+    fNeedMore ? 1 : 0,
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iMenu,
+    pPlayer->m_iTeam,
+    pszText ? pszText : ""
+);
+
 	MESSAGE_BEGIN(MSG_ONE, gmsgShowMenu, nullptr, pPlayer->pev);
 		WRITE_SHORT(bitsValidSlots);
 		WRITE_CHAR(nDisplayTime);
@@ -401,14 +413,28 @@ LINK_HOOK_VOID_CHAIN(ShowVGUIMenu, (CBasePlayer *pPlayer, int MenuType, int BitM
 
 void EXT_FUNC __API_HOOK(ShowVGUIMenu)(CBasePlayer *pPlayer, int MenuType, int BitMask, char *szOldMenu)
 {
+DBG("ShowVGUIMenu: ent=%d type=%d bits=0x%x joinState=%d menu=%d team=%d vgui=%d forceShow=%d skip=%d text=\"%.40s\"",
+    pPlayer->entindex(),
+    MenuType,
+    BitMask,
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iMenu,
+    pPlayer->m_iTeam,
+    pPlayer->m_bVGUIMenus ? 1 : 0,
+    pPlayer->CSPlayer()->m_bForceShowMenu ? 1 : 0,
+    CSGameRules()->ShouldSkipShowMenu() ? 1 : 0,
+    szOldMenu ? szOldMenu : "");
+
 #ifdef REGAMEDLL_ADD
 	if (CSGameRules()->ShouldSkipShowMenu()) {
+DBG("ShowVGUIMenu: skipping menu due to ShouldSkipShowMenu");
 		CSGameRules()->MarkShowMenuSkipped();
 		pPlayer->ResetMenu();
 		return;
 	}
 
 	if (pPlayer->CSPlayer()->m_bForceShowMenu) {
+DBG("ShowVGUIMenu: m_bForceShowMenu=1, sending text ShowMenu instead of VGUI");
 		ShowMenu(pPlayer, BitMask, -1, 0, szOldMenu);
 		return;
 	}
@@ -417,6 +443,7 @@ void EXT_FUNC __API_HOOK(ShowVGUIMenu)(CBasePlayer *pPlayer, int MenuType, int B
 
 	if (pPlayer->m_bVGUIMenus || MenuType > VGUI_Menu_Buy_Item)
 	{
+DBG("ShowVGUIMenu: sending VGUI menu message");
 		MESSAGE_BEGIN(MSG_ONE, gmsgVGUIMenu, nullptr, pPlayer->pev);
 			WRITE_BYTE(MenuType);
 			WRITE_SHORT(BitMask);
@@ -426,7 +453,10 @@ void EXT_FUNC __API_HOOK(ShowVGUIMenu)(CBasePlayer *pPlayer, int MenuType, int B
 		MESSAGE_END();
 	}
 	else
+	{
+DBG("ShowVGUIMenu: sending text ShowMenu");
 		ShowMenu(pPlayer, BitMask, -1, 0, szOldMenu);
+	}
 }
 
 NOXREF int CountTeams()
@@ -615,14 +645,17 @@ void CheckStartMoney()
 
 void EXT_FUNC ClientPutInServer(edict_t *pEntity)
 {
+DBG("ClientPutInServer: started");
 	entvars_t *pev = &pEntity->v;
 	CBasePlayer *pPlayer = GetClassPtr<CCSPlayer>((CBasePlayer *)pev);
 
 	pPlayer->SetCustomDecalFrames(-1);
 	pPlayer->SetPrefsFromUserinfo(GET_INFO_BUFFER(pEntity));
 
+DBG("ClientPutInServer: !g_pGameRules->IsMultiplayer()");
 	if (!g_pGameRules->IsMultiplayer())
 	{
+DBG("ClientPutInServer: pPlayer->Spawn()");
 		pPlayer->Spawn();
 		return;
 	}
@@ -638,6 +671,7 @@ void EXT_FUNC ClientPutInServer(edict_t *pEntity)
 	pPlayer->m_bTeamChanged = false;
 	pPlayer->m_iNumSpawns = 0;
 
+DBG("ClientPutInServer: CheckStartMoney()");
 	CheckStartMoney();
 
 #ifdef REGAMEDLL_ADD
@@ -646,6 +680,7 @@ void EXT_FUNC ClientPutInServer(edict_t *pEntity)
 	pPlayer->m_iAccount = int(startmoney.value);
 #endif
 
+DBG("ClientPutInServer: After ifdef REGAMEDLL_ADD");
 	pPlayer->m_fGameHUDInitialized = FALSE;
 	pPlayer->m_flDisplayHistory &= ~DHF_ROUND_STARTED;
 	pPlayer->pev->flags |= FL_SPECTATOR;
@@ -679,21 +714,27 @@ void EXT_FUNC ClientPutInServer(edict_t *pEntity)
 	CBaseEntity *pTarget = nullptr;
 	pPlayer->m_pIntroCamera = UTIL_FindEntityByClassname(nullptr, "trigger_camera");
 
+DBG("ClientPutInServer: Before ifndef REGAMEDLL_FIXES");
 #ifndef REGAMEDLL_FIXES
 	if (g_pGameRules && g_pGameRules->IsMultiplayer())
 	{
 		CSGameRules()->m_bMapHasCameras = (pPlayer->m_pIntroCamera != nullptr);
 	}
 #endif
+DBG("ClientPutInServer: After ifndef REGAMEDLL_FIXES");
 
+DBG("ClientPutInServer: before if pPlayer->m_pIntroCamera");
 	if (pPlayer->m_pIntroCamera)
 	{
+DBG("ClientPutInServer: inside if pPlayer->m_pIntroCamera");
 		// find the target (by default info_target) for the camera view direction.
 		pTarget = UTIL_FindEntityByTargetname(nullptr, STRING(pPlayer->m_pIntroCamera->pev->target));
 	}
 
+DBG("ClientPutInServer: before if pPlayer->m_pIntroCamera && pTarget");
 	if (pPlayer->m_pIntroCamera && pTarget)
 	{
+DBG("ClientPutInServer: inside if pPlayer->m_pIntroCamera && pTarget");
 		Vector CamAngles = UTIL_VecToAngles((pTarget->pev->origin - pPlayer->m_pIntroCamera->pev->origin).Normalize());
 		CamAngles.x = -CamAngles.x;
 
@@ -713,6 +754,7 @@ void EXT_FUNC ClientPutInServer(edict_t *pEntity)
 #ifndef REGAMEDLL_FIXES
 	else
 	{
+DBG("ClientPutInServer: else pPlayer->m_pIntroCamera && pTarget");
 		pPlayer->m_iTeam = CT;
 
 		if (g_pGameRules)
@@ -733,8 +775,10 @@ void EXT_FUNC ClientPutInServer(edict_t *pEntity)
 
 	pPlayer->m_iJoiningState = SHOWLTEXT;
 
+DBG("ClientPutInServer: before netname");
 	char sName[128];
 	Q_strlcpy(sName, STRING(pPlayer->pev->netname));
+DBG("ClientPutInServer: after netname");
 
 	for (char *pApersand = sName; pApersand && *pApersand != '\0'; pApersand++)
 	{
@@ -742,11 +786,14 @@ void EXT_FUNC ClientPutInServer(edict_t *pEntity)
 			*pApersand = ' ';
 	}
 
+DBG("ClientPutInServer: before REGAMEDLL_API pPlayer->CSPlayer()->OnConnect()");
 #ifdef REGAMEDLL_API
 	pPlayer->CSPlayer()->OnConnect();
 #endif
+DBG("ClientPutInServer: after REGAMEDLL_API pPlayer->CSPlayer()->OnConnect()");
 
 	UTIL_ClientPrintAll(HUD_PRINTNOTIFY, "#Game_connected", (sName[0] != '\0') ? sName : "<unconnected>");
+DBG("ClientPutInServer: finished");
 }
 
 void Host_Say(edict_t *pEntity, BOOL teamonly)
@@ -1773,6 +1820,15 @@ LINK_HOOK_CHAIN(BOOL, HandleMenu_ChooseTeam, (CBasePlayer *pPlayer, int slot), p
 // can be closed...false if the menu should be displayed again
 BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 {
+DBG("HandleMenu_ChooseTeam: ENTER slot=%d team=%d joiningState=%d menu=%d deadflag=%d bVGUI=%d isVIP=%d",
+    slot,
+    pPlayer->m_iTeam,
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iMenu,
+    pPlayer->pev->deadflag,
+    pPlayer->m_bVGUIMenus ? 1 : 0,
+    pPlayer->m_bIsVIP ? 1 : 0);
+
 	// If this player is a VIP, don't allow him to switch teams/appearances unless the following conditions are met :
 	// a) There is another TEAM_CT player who is in the queue to be a VIP
 	// b) This player is dead
@@ -1781,6 +1837,7 @@ BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 	{
 		if (pPlayer->pev->deadflag == DEAD_NO)
 		{
+DBG("HandleMenu_ChooseTeam: EARLY RETURN (VIP alive) slot=%d", slot);
 			ClientPrint(pPlayer->pev, HUD_PRINTCENTER, "#Cannot_Switch_From_VIP");
 			CLIENT_COMMAND(ENT(pPlayer->pev), "slot10\n");
 
@@ -1788,6 +1845,7 @@ BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 		}
 		else if (CSGameRules()->IsVIPQueueEmpty())
 		{
+DBG("HandleMenu_ChooseTeam: EARLY RETURN (VIP queue empty) slot=%d", slot);
 			ClientPrint(pPlayer->pev, HUD_PRINTCENTER, "#Cannot_Switch_From_VIP");
 			CLIENT_COMMAND(ENT(pPlayer->pev), "slot10\n");
 
@@ -1800,13 +1858,16 @@ BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 	switch (slot)
 	{
 	case MENU_SLOT_TEAM_TERRORIST:
+DBG("HandleMenu_ChooseTeam: slot MENU_SLOT_TEAM_TERRORIST");
 		team = TERRORIST;
 		break;
 	case MENU_SLOT_TEAM_CT:
+DBG("HandleMenu_ChooseTeam: slot MENU_SLOT_TEAM_CT");
 		team = CT;
 		break;
 	case MENU_SLOT_TEAM_VIP:
 	{
+DBG("HandleMenu_ChooseTeam: slot MENU_SLOT_TEAM_VIP");
 		if (CSGameRules()->m_bMapHasVIPSafetyZone && pPlayer->m_iTeam == CT)
 		{
 			CSGameRules()->AddToVIPQueue(pPlayer);
@@ -1821,6 +1882,7 @@ BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 	}
 	case MENU_SLOT_TEAM_RANDOM:
 	{
+DBG("HandleMenu_ChooseTeam: slot MENU_SLOT_TEAM_RANDOM");
 		// Attempt to auto-select a team
 		team = CSGameRules()->SelectDefaultTeam();
 		if (team == UNASSIGNED)
@@ -1856,6 +1918,7 @@ BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 	}
 	case MENU_SLOT_TEAM_SPECT:
 	{
+DBG("HandleMenu_ChooseTeam: slot MENU_SLOT_TEAM_SPECT");
 		// Prevent this is the cvar is set
 		// spectator proxy
 		if (!allow_spectators.value && !(pPlayer->pev->flags & FL_PROXY))
@@ -1967,8 +2030,11 @@ BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 		break;
 	}
 	default:
+DBG("HandleMenu_ChooseTeam: slot default");
 		return FALSE;
 	}
+
+DBG("HandleMenu_ChooseTeam: after switch slot=%d resolved team=%d", slot, team);
 
 	// If the code gets this far, the team is not TEAM_UNASSIGNED
 	// Player is switching to a new team (It is possible to switch to the
@@ -2089,6 +2155,11 @@ BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 	{
 		if (!CSGameRules()->IsCareer())
 		{
+DBG("HandleMenu_ChooseTeam: about to ShowVGUIMenu for team=%d joiningState=%d menu(before)=%d deadflag=%d",
+    pPlayer->m_iTeam,
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iMenu,
+    pPlayer->pev->deadflag);
 			switch (team)
 			{
 			case CT:
@@ -2105,6 +2176,11 @@ BOOL EXT_FUNC __API_HOOK(HandleMenu_ChooseTeam)(CBasePlayer *pPlayer, int slot)
 					ShowVGUIMenu(pPlayer, VGUI_Menu_Class_T, (MENU_KEY_1 | MENU_KEY_2 | MENU_KEY_3 | MENU_KEY_4 | MENU_KEY_5), "#Terrorist_Select");
 				break;
 			}
+DBG("HandleMenu_ChooseTeam: EXIT TRUE final team=%d joiningState=%d menu=%d deadflag=%d",
+    pPlayer->m_iTeam,
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iMenu,
+    pPlayer->pev->deadflag);
 		}
 
 		pPlayer->m_iMenu = Menu_ChooseAppearance;
@@ -2607,6 +2683,17 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 	entvars_t *pev = &pEntity->v;
 	CBasePlayer *pPlayer = GetClassPtr<CCSPlayer>((CBasePlayer *)pev);
 
+DBG("InternalCommand: ent=%d cmd='%s' arg='%s' menu=%d joining=%d team=%d dead=%d vgui=%d",
+	ENTINDEX(pEntity),
+	pcmd ? pcmd : "",
+	parg1 ? parg1 : "",
+	pPlayer ? pPlayer->m_iMenu : -1,
+	pPlayer ? pPlayer->m_iJoiningState : -1,
+	pPlayer ? pPlayer->m_iTeam : -1,
+	pPlayer ? pPlayer->pev->deadflag : -1,
+	pPlayer ? pPlayer->m_bVGUIMenus : -1
+);
+
 	if (FStrEq(pcmd, "say"))
 	{
 		if (gpGlobals->time >= pPlayer->m_flLastCommandTime[CMD_SAY])
@@ -2874,6 +2961,17 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 	else if (FStrEq(pcmd, "menuselect"))
 	{
 		int slot = Q_atoi(parg1);
+
+DBG("menuselect: BEFORE ent=%d slot=%d menu=%d joining=%d team=%d vgui=%d forceShow=%d",
+    ENTINDEX(pEntity),
+    slot,
+    pPlayer->m_iMenu,
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iTeam,
+    pPlayer->m_bVGUIMenus,
+    pPlayer->CSPlayer()->m_bForceShowMenu
+);
+
 		if (pPlayer->m_iJoiningState == JOINED || (pPlayer->m_iMenu != Menu_ChooseAppearance && pPlayer->m_iMenu != Menu_ChooseTeam))
 		{
 			if (slot == 10)
@@ -2885,15 +2983,27 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 #ifdef REGAMEDLL_ADD
 		auto canOpenOldMenu = [pPlayer]()-> bool
 		{
+DBG("canOpenOldMenu: vgui=%d forceShow=%d joinState=%d menu=%d dead=%d",
+    pPlayer->m_bVGUIMenus,
+    pPlayer->CSPlayer()->m_bForceShowMenu,
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iMenu,
+    pPlayer->pev->deadflag);
+
 			if (!pPlayer->m_bVGUIMenus || pPlayer->CSPlayer()->m_bForceShowMenu) {
 				pPlayer->CSPlayer()->m_bForceShowMenu = false;
+DBG("canOpenOldMenu: return true");
 				return true;
 			}
 
+DBG("canOpenOldMenu: return false");
 			return false;
 		};
 #else
 		auto canOpenOldMenu = [pPlayer]()-> bool {
+DBG("canOpenOldMenu(legacy): vgui=%d", pPlayer->m_bVGUIMenus);
+DBG("canOpenOldMenu: return %d", (pPlayer->m_bVGUIMenus == false));
+
 			return pPlayer->m_bVGUIMenus == false;
 		};
 #endif
@@ -2901,18 +3011,30 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 		switch (pPlayer->m_iMenu)
 		{
 			case Menu_OFF:
+DBG("menuselect: case Menu_OFF");
 				break;
 
 			case Menu_ChooseTeam:
 			{
+DBG("menuselect: case Menu_ChooseTeam");
+DBG("menuselect: Menu_ChooseTeam before HandleMenu_ChooseTeam slot=%d", slot);
+
 				if (canOpenOldMenu() && !HandleMenu_ChooseTeam(pPlayer, slot))
 				{
+DBG("menuselect: team NOT handled (handled=0), old-menu fallback allowed; reopening team menu; joinState=%d menu=%d team=%d",
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iMenu,
+    pPlayer->m_iTeam);
 					pPlayer->m_iMenu = Menu_ChooseTeam;
 					if (pPlayer->m_iJoiningState == JOINED)
 						ShowVGUIMenu(pPlayer, VGUI_Menu_Team, (MENU_KEY_1 | MENU_KEY_2 | MENU_KEY_5 | MENU_KEY_0), "#IG_Team_Select");
 					else
 						ShowVGUIMenu(pPlayer, VGUI_Menu_Team, (MENU_KEY_1 | MENU_KEY_2 | MENU_KEY_5), "#Team_Select");
 				}
+else
+{
+    DBG("menuselect: HandleMenu_ChooseTeam returned TRUE; new menu=%d team=%d", pPlayer->m_iMenu, pPlayer->m_iTeam);
+}
 				break;
 			}
 			case Menu_IGChooseTeam:
@@ -2924,8 +3046,10 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 			}
 			case Menu_ChooseAppearance:
 			{
+DBG("menuselect: Menu_ChooseAppearance before HandleMenu_ChooseAppearance slot=%d", slot);
 				if (canOpenOldMenu()) {
 					HandleMenu_ChooseAppearance(pPlayer, slot);
+DBG("menuselect: Menu_ChooseAppearance after HandleMenu_ChooseAppearance menu=%d team=%d model=%d", pPlayer->m_iMenu, pPlayer->m_iTeam, pPlayer->m_iModelName);
 				}
 				break;
 			}
@@ -3062,6 +3186,7 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 						}
 					}
 				}
+DBG("ClientCommand_: menuselect AFTER  ent=%d joiningState=%d team=%d", pPlayer->entindex(), pPlayer->m_iJoiningState, pPlayer->m_iTeam);
 				break;
 			}
 			case Menu_BuyPistol:
@@ -3152,6 +3277,12 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 	}
 	else if (FStrEq(pcmd, "chooseteam"))
 	{
+DBG("InternalCommand: chooseteam BEFORE: joinState=%d menu=%d team=%d justConnected=%d",
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iMenu,
+    pPlayer->m_iTeam,
+    pPlayer->m_bJustConnected ? 1 : 0
+);
 		if (pPlayer->m_iMenu == Menu_ChooseAppearance)
 			return;
 
@@ -3166,6 +3297,11 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 
 		if (!CSGameRules()->IsCareer())
 		{
+DBG("InternalCommand: chooseteam set menu=Menu_ChooseTeam joinState=%d team=%d vgui=%d",
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iTeam,
+    pPlayer->m_bVGUIMenus ? 1 : 0
+);
 			pPlayer->m_iMenu = Menu_ChooseTeam;
 			if (CSGameRules()->m_bMapHasVIPSafetyZone && pPlayer->m_iJoiningState == JOINED && pPlayer->m_iTeam == CT)
 			{
@@ -3352,6 +3488,10 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 		}
 		else if (FStrEq(pcmd, "jointeam"))
 		{
+DBG("ClientCommand_: jointeam BEFORE  ent=%d joiningState=%d team=%d arg1=\"%s\"",
+	pPlayer->entindex(), pPlayer->m_iJoiningState, pPlayer->m_iTeam,
+	CMD_ARGC() > 1 ? CMD_ARGV(1) : "<none>");
+
 			if (pPlayer->m_iMenu == Menu_ChooseAppearance)
 			{
 				ClientPrint(pPlayer->pev, HUD_PRINTCENTER, "#Command_Not_Available");
@@ -3380,10 +3520,20 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 				else
 					ShowVGUIMenu(pPlayer, VGUI_Menu_Team, (MENU_KEY_1 | MENU_KEY_2 | MENU_KEY_5), "#Team_Select");
 			}
+DBG("ClientCommand_: jointeam AFTER   ent=%d joiningState=%d team=%d", pPlayer->entindex(), pPlayer->m_iJoiningState, pPlayer->m_iTeam);
 		}
 		else if (FStrEq(pcmd, "joinclass"))
 		{
 			int slot = Q_atoi(parg1);
+
+DBG("InternalCommand: joinclass BEFORE slot=%d joinState=%d menu=%d team=%d model=%d",
+    slot,
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iMenu,
+    pPlayer->m_iTeam,
+    pPlayer->m_iModelName
+);
+
 			if (pPlayer->m_iMenu != Menu_ChooseAppearance)
 			{
 				ClientPrint(pPlayer->pev, HUD_PRINTCENTER, "#Command_Not_Available");
@@ -3391,6 +3541,14 @@ void EXT_FUNC InternalCommand(edict_t *pEntity, const char *pcmd, const char *pa
 			}
 
 			HandleMenu_ChooseAppearance(pPlayer, slot);
+
+DBG("InternalCommand: joinclass AFTER slot=%d joinState=%d menu=%d team=%d model=%d",
+    slot,
+    pPlayer->m_iJoiningState,
+    pPlayer->m_iMenu,
+    pPlayer->m_iTeam,
+    pPlayer->m_iModelName
+);
 		}
 		else if (pPlayer->pev->deadflag == DEAD_NO)
 		{
@@ -3695,16 +3853,20 @@ void EXT_FUNC ClientCommand_(edict_t *pEntity)
 // called after the player changes userinfo - gives dll a chance to modify it before it gets sent into the rest of the engine.
 void EXT_FUNC ClientUserInfoChanged(edict_t *pEntity, char *infobuffer)
 {
+	DBG("ClientUserInfoChanged: started");
 	// Is the client spawned yet?
 	if (!pEntity->pvPrivateData)
 		return;
 
+	DBG("ClientUserInfoChanged: before CBasePlayer::Instance(pEntity)");
 	CBasePlayer *pPlayer = CBasePlayer::Instance(pEntity);
 	char *szBufferName = GET_KEY_VALUE(infobuffer, "name");
+	DBG("ClientUserInfoChanged: after CBasePlayer::Instance(pEntity)");
 
 	// msg everyone if someone changes their name, and it isn't the first time (changing no name to current name)
 	if (pEntity->v.netname && STRING(pEntity->v.netname)[0] != '\0' && !FStrEq(STRING(pEntity->v.netname), szBufferName))
 	{
+DBG("ClientUserInfoChanged: inside if pEntity->v.netname && STRING(pEntity->v.netname)[0] != '\0' && !FStrEq(STRING(pEntity->v.netname), szBufferName)");
 		char szName[32];
 		Q_snprintf(szName, sizeof(szName), "%s", szBufferName);
 
@@ -3727,12 +3889,14 @@ void EXT_FUNC ClientUserInfoChanged(edict_t *pEntity, char *infobuffer)
 		}
 	}
 
+DBG("ClientUserInfoChanged: before REGAMEDLL_FIXES");
 	// was already checking on pvPrivateData
 #ifndef REGAMEDLL_FIXES
 	g_pGameRules->ClientUserInfoChanged(GetClassPtr<CCSPlayer>((CBasePlayer *)&pEntity->v), infobuffer);
 #else
 	g_pGameRules->ClientUserInfoChanged(pPlayer, infobuffer);
 #endif
+DBG("ClientUserInfoChanged: after REGAMEDLL_FIXES");
 }
 
 void EXT_FUNC ServerDeactivate()
@@ -3843,6 +4007,15 @@ void EXT_FUNC PlayerPreThink(edict_t *pEntity)
 
 	if (pPlayer)
 	{
+		// DBG LOG START
+	        static float s_lastLog = 0.0f;
+		if (gpGlobals->time - s_lastLog > 1.0f) {
+	            DBG("PlayerPreThink: entindex=%d time=%.2f",
+	                ENTINDEX(pEntity), gpGlobals->time);
+	            s_lastLog = gpGlobals->time;
+	        }
+		// DBG LOG FINISH
+
 		pPlayer->PreThink();
 	}
 }

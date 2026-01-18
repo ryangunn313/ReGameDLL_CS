@@ -1,4 +1,5 @@
 #include "precompiled.h"
+#include "debuglog.h"
 
 CCStrikeGameMgrHelper g_GameMgrHelper;
 CHalfLifeMultiplay *g_pMPGameRules = nullptr;
@@ -3401,18 +3402,23 @@ void CHalfLifeMultiplay::UpdateGameMode(CBasePlayer *pPlayer)
 
 void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 {
+DBG("CHalfLifeMultiplay::InitHUD: started");
 	int i;
 
 	// notify other clients of player joining the game
 	UTIL_LogPrintf("\"%s<%i><%s><>\" entered the game\n", STRING(pl->pev->netname), GETPLAYERUSERID(pl->edict()), GETPLAYERAUTHID(pl->edict()));
 
+DBG("CHalfLifeMultiplay::InitHUD: before UpdateGameMode(pl)");
 	UpdateGameMode(pl);
+DBG("CHalfLifeMultiplay::InitHUD: after UpdateGameMode(pl)");
 
+DBG("CHalfLifeMultiplay::InitHUD: before if !CVAR_GET_FLOAT(\"sv_cheats\")");
 	if (!CVAR_GET_FLOAT("sv_cheats"))
 	{
 		MESSAGE_BEGIN(MSG_ONE, gmsgViewMode, nullptr, pl->edict());
 		MESSAGE_END();
 	}
+DBG("CHalfLifeMultiplay::InitHUD: after if !CVAR_GET_FLOAT(\"sv_cheats\")");
 
 	// sending just one score makes the hud scoreboard active; otherwise
 	// it is just disabled for single play
@@ -3428,6 +3434,7 @@ void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 		WRITE_LONG(g_iShadowSprite);
 	MESSAGE_END();
 
+DBG("CHalfLifeMultiplay::InitHUD: before if IsCareer()");
 	if (IsCareer())
 	{
 		MESSAGE_BEGIN(MSG_ONE, gmsgCZCareer, nullptr, pl->edict());
@@ -3437,7 +3444,9 @@ void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 	}
 	else
 		SendMOTDToClient(pl->edict());
+DBG("CHalfLifeMultiplay::InitHUD: after if IsCareer()");
 
+DBG("CHalfLifeMultiplay::InitHUD: before for loop");
 	// loop through all active players and send their score info to the new client
 	for (i = 1; i <= gpGlobals->maxClients; i++)
 	{
@@ -3454,6 +3463,7 @@ void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 			WRITE_SHORT(plr->m_iTeam);
 		MESSAGE_END();
 	}
+DBG("CHalfLifeMultiplay::InitHUD: after for loop");
 
 	MESSAGE_BEGIN(MSG_ONE, gmsgTeamScore, nullptr, pl->edict());
 		WRITE_STRING("TERRORIST");
@@ -3475,12 +3485,15 @@ void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 		WRITE_BYTE(fadetoblack.value == FADETOBLACK_STAY);
 	MESSAGE_END();
 
+DBG("CHalfLifeMultiplay::InitHUD: before if m_bGameOver");
 	if (m_bGameOver)
 	{
 		MESSAGE_BEGIN(MSG_ONE, SVC_INTERMISSION, nullptr, pl->edict());
 		MESSAGE_END();
 	}
+DBG("CHalfLifeMultiplay::InitHUD: after if m_bGameOver");
 
+DBG("CHalfLifeMultiplay::InitHUD: before for loop2");
 	for (i = 1; i <= gpGlobals->maxClients; i++)
 	{
 		CBasePlayer *plr = UTIL_PlayerByIndex(i);
@@ -3495,12 +3508,14 @@ void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 
 		plr->SetScoreboardAttributes(pl);
 
+DBG("CHalfLifeMultiplay::InitHUD: before if pl->entindex() != i");
 		if (pl->entindex() != i)
 		{
 #ifndef REGAMEDLL_FIXES
 			if (plr->IsDormant())
 				continue;
 #endif
+DBG("CHalfLifeMultiplay::InitHUD: if plr->pev->deadflag == DEAD_NO");
 			if (plr->pev->deadflag == DEAD_NO
 #ifdef BUILD_LATEST_FIXES
 				&& plr->m_iTeam == pl->m_iTeam
@@ -3515,6 +3530,7 @@ void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 				MESSAGE_END();
 			}
 		}
+DBG("CHalfLifeMultiplay::InitHUD: after if pl->entindex() != i");
 
 #ifdef BUILD_LATEST
 		MESSAGE_BEGIN(MSG_ONE, gmsgHealthInfo, nullptr, pl->edict());
@@ -3527,8 +3543,11 @@ void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 			WRITE_LONG(plr->ShouldToShowAccount(pl) ? plr->m_iAccount : -1 /* means that this 'Money' will be hidden */);
 		MESSAGE_END();
 #endif // BUILD_LATEST
+DBG("CHalfLifeMultiplay::InitHUD: after BUILD_LATEST");
 	}
+DBG("CHalfLifeMultiplay::InitHUD: after for loop2");
 
+DBG("CHalfLifeMultiplay::InitHUD: SendMsgBombDrop");
 	auto SendMsgBombDrop = [&pl](const int flag, const Vector& pos)
 	{
 		MESSAGE_BEGIN(MSG_ONE, gmsgBombDrop, nullptr, pl->edict());
@@ -3539,8 +3558,10 @@ void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 		MESSAGE_END();
 	};
 
+DBG("CHalfLifeMultiplay::InitHUD: if m_bBombDropped");
 	if (m_bBombDropped)
 	{
+DBG("CHalfLifeMultiplay::InitHUD: inside if m_bBombDropped");
 		CBaseEntity *pWeaponC4 = UTIL_FindEntityByClassname(nullptr, "weapon_c4");
 		if (pWeaponC4)
 		{
@@ -3550,6 +3571,7 @@ void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 #ifdef REGAMEDLL_FIXES
 	else
 	{
+DBG("CHalfLifeMultiplay::InitHUD: else m_bBombDropped");
 		CGrenade *bomb = nullptr;
 		while ((bomb = UTIL_FindEntityByClassname(bomb, "grenade")))
 		{
@@ -3575,6 +3597,7 @@ void CHalfLifeMultiplay::InitHUD(CBasePlayer *pl)
 		}
 	}
 #endif
+DBG("CHalfLifeMultiplay::InitHUD: finished");
 }
 
 void CHalfLifeMultiplay::ClientDisconnected(edict_t *pClient)

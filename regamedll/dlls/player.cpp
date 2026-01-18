@@ -27,6 +27,7 @@
 */
 
 #include "precompiled.h"
+#include "debuglog.h"
 
 BOOL gInitHUD = TRUE;
 
@@ -3747,14 +3748,23 @@ LINK_HOOK_CLASS_VOID_CHAIN2(CBasePlayer, JoiningThink)
 
 void EXT_FUNC CBasePlayer::__API_HOOK(JoiningThink)()
 {
+DBG("JoiningThink: started");
+DBG("JoiningThink: ent=%d state=%d team=%d origin=(%.1f,%.1f,%.1f) flags=0x%x movetype=%d solid=%d deadflag=%d effects=0x%x\n",
+        entindex(), m_iJoiningState, m_iTeam,
+        pev->origin.x, pev->origin.y, pev->origin.z,
+        pev->flags, pev->movetype, pev->solid, pev->deadflag, pev->effects
+);
+
 	switch (m_iJoiningState)
 	{
 		case JOINED:
 		{
+DBG("JoiningThink: case JOINED");
 			return;
 		}
 		case SHOWLTEXT:
 		{
+DBG("JoiningThink: case SHOWLTEXT");
 			ResetMenu();
 			m_iJoiningState = SHOWTEAMSELECT;
 
@@ -3776,6 +3786,7 @@ void EXT_FUNC CBasePlayer::__API_HOOK(JoiningThink)()
 		}
 		case READINGLTEXT:
 		{
+DBG("JoiningThink: case READINGLTEXT");
 			if (m_afButtonPressed & (IN_ATTACK | IN_ATTACK2 | IN_JUMP))
 			{
 				m_afButtonPressed &= ~(IN_ATTACK | IN_ATTACK2 | IN_JUMP);
@@ -3787,10 +3798,16 @@ void EXT_FUNC CBasePlayer::__API_HOOK(JoiningThink)()
 		}
 		case GETINTOGAME:
 		{
+DBG("JoiningThink: case GETINTOGAME");
 			if (GetIntoGame()) {
 				return;
 			}
 
+			break;
+		}
+		default:
+		{
+			DBG("JoiningThink: UNKNOWN state=%d\n", m_iJoiningState);
 			break;
 		}
 	}
@@ -4645,8 +4662,14 @@ void EXT_FUNC CBasePlayer::__API_HOOK(PreThink)()
 	// this means the player has pressed or released a key
 	if (buttonsChanged)
 	{
+DBG("PreThink: ent=%d buttonsChanged=0x%x currentButtons=0x%x\n", entindex(), buttonsChanged, pev->button);
 		m_fLastMovement = gpGlobals->time;
 	}
+
+DBG("PreThink: ent=%d joiningState=%d vel=(%.1f,%.1f,%.1f) onground=%d\n",
+	entindex(), m_iJoiningState,
+	pev->velocity.x, pev->velocity.y, pev->velocity.z,
+	(pev->flags & FL_ONGROUND) ? 1 : 0);
 
 	// Debounced button codes for pressed/released
 	// UNDONE: Do we need auto-repeat?
@@ -7611,6 +7634,8 @@ void EXT_FUNC CBasePlayer::__API_HOOK(UpdateClientData)()
 
 	if (m_iHideHUD != m_iClientHideHUD)
 	{
+DBG("CBasePlayer:HideHUD change: ent=%d m_iHideHUD=0x%x -> client=%d\n", entindex(), m_iHideHUD, m_iClientHideHUD);
+
 		MESSAGE_BEGIN(MSG_ONE, gmsgHideWeapon, nullptr, pev);
 			WRITE_BYTE(m_iHideHUD);
 		MESSAGE_END();
@@ -10269,14 +10294,24 @@ bool CBasePlayer::IsObservingPlayer(CBasePlayer *pPlayer)
 
 void CBasePlayer::UpdateLocation(bool forceUpdate)
 {
+DBG("UpdateLocation: started");
+DBG("UpdateLocation: before ifdef REGAMEDLL_FIXES");
 #ifdef REGAMEDLL_FIXES
 	if (!forceUpdate && m_flLastUpdateTime > gpGlobals->time - 2.0f)
 #else
 	if (!forceUpdate && m_flLastUpdateTime >= gpGlobals->time + 2.0f)
 #endif
 		return;
+DBG("UpdateLocation: after ifdef REGAMEDLL_FIXES");
 
 	const char *placeName = nullptr;
+
+DBG("UpdateLocation: before if pev->deadflag == DEAD_NO && AreBotsAllowed()");
+#ifdef REGAMEDLL_ADD
+DBG("UpdateLocation: REGAMEDLL_ADD IS defined, location_area_info=%d", location_area_info.value);
+#else
+DBG("UpdateLocation: REGAMEDLL_ADD is NOT defined, skipping location_area_info check");
+#endif
 
 	if (pev->deadflag == DEAD_NO && (
 #ifdef REGAMEDLL_ADD
@@ -10284,30 +10319,41 @@ void CBasePlayer::UpdateLocation(bool forceUpdate)
 #endif
 		AreBotsAllowed()))
 	{
+DBG("UpdateLocation: inside if pev->deadflag == DEAD_NO && AreBotsAllowed()");
 		// search the place name where is located the player
 		Place playerPlace = TheNavAreaGrid.GetPlace(&pev->origin);
 		const BotPhraseList *placeList = TheBotPhrases->GetPlaceList();
+DBG("UpdateLocation: before for (auto phrase : *placeList)");
+DBG("UpdateLocation: placeList=%p", placeList);
+
 		for (auto phrase : *placeList)
 		{
+DBG("UpdateLocation: inside for (auto phrase : *placeList)");
 			if (phrase->GetID() == playerPlace)
 			{
+DBG("UpdateLocation: inside if (phrase->GetID() == playerPlace)");
 				placeName = phrase->GetName();
 				break;
 			}
 		}
+DBG("UpdateLocation: after for (auto phrase : *placeList)");
 
 		if (!placeName)
 			placeName = TheNavAreaGrid.IDToName(playerPlace);
 	}
+DBG("UpdateLocation: after if pev->deadflag == DEAD_NO && AreBotsAllowed()");
 
+DBG("UpdateLocation: before if (!placeName || !placeName[0] || (m_lastLocation[0] && !Q_strcmp(placeName, &m_lastLocation[1])))");
 	if (!placeName || !placeName[0] || (m_lastLocation[0] && !Q_strcmp(placeName, &m_lastLocation[1])))
 	{
 		return;
 	}
+DBG("UpdateLocation: after if (!placeName || !placeName[0] || (m_lastLocation[0] && !Q_strcmp(placeName, &m_lastLocation[1])))");
 
 	m_flLastUpdateTime = gpGlobals->time;
 	Q_snprintf(m_lastLocation, sizeof(m_lastLocation), "#%s", placeName);
 
+DBG("UpdateLocation: before for (int i = 1; i <= gpGlobals->maxClients; i++)");
 	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
 		CBasePlayer *pPlayer = UTIL_PlayerByIndex(i);
@@ -10330,6 +10376,8 @@ void CBasePlayer::UpdateLocation(bool forceUpdate)
 			MESSAGE_END();
 		}
 	}
+DBG("UpdateLocation: before for (int i = 1; i <= gpGlobals->maxClients; i++)");
+DBG("UpdateLocation: finished");
 }
 
 void CBasePlayer::ReloadWeapons(CBasePlayerItem *pWeapon, bool bForceReload, bool bForceRefill)
@@ -10634,6 +10682,13 @@ LINK_HOOK_CLASS_CHAIN2(bool, CBasePlayer, GetIntoGame)
 
 bool EXT_FUNC CBasePlayer::__API_HOOK(GetIntoGame)()
 {
+DBG("GetIntoGame: started");
+DBG("GetIntoGame: ENTER ent=%d team=%d model=%d origin=(%.1f,%.1f,%.1f) flags=0x%x movetype=%d solid=%d deadflag=%d effects=0x%x\n",
+        entindex(), m_iTeam, m_iModelName,
+        pev->origin.x, pev->origin.y, pev->origin.z,
+        pev->flags, pev->movetype, pev->solid, pev->deadflag, pev->effects
+);
+
 	m_bNotKilled = false;
 	m_iIgnoreGlobalChat = IGNOREMSG_NONE;
 
@@ -10658,9 +10713,14 @@ bool EXT_FUNC CBasePlayer::__API_HOOK(GetIntoGame)()
 		AddAccount(startmoney.value, RT_INTO_GAME);
 	}
 
+    DBG("GetIntoGame[ARM64]: before FPlayerCanRespawn: team=%d, model=%d, deadflag=%d",
+        m_iTeam, m_iModelName, pev->deadflag);
+
 	if (g_pGameRules->FPlayerCanRespawn(this))
 	{
+DBG("GetIntoGame: FPlayerCanRespawn == true, calling Spawn()");
 		Spawn();
+DBG("GetIntoGame[ARM64]: after Spawn: origin=(%.1f, %.1f, %.1f) deadflag=%d onground=%d", pev->origin.x, pev->origin.y, pev->origin.z, pev->deadflag, (pev->flags & FL_ONGROUND) ? 1 : 0);
 		CSGameRules()->CheckWinConditions();
 
 		if (!CSGameRules()->m_flRestartRoundTime && CSGameRules()->m_bMapHasBombTarget && !CSGameRules()->IsThereABomber() && !CSGameRules()->IsThereABomb()
@@ -10678,6 +10738,7 @@ bool EXT_FUNC CBasePlayer::__API_HOOK(GetIntoGame)()
 	}
 	else
 	{
+DBG("GetIntoGame[ARM64]: FPlayerCanRespawn == false, going to spectator StartObserver()");
 		pev->deadflag = DEAD_RESPAWNABLE;
 
 		MAKE_STRING_CLASS("player", pev);
@@ -10715,6 +10776,11 @@ bool EXT_FUNC CBasePlayer::__API_HOOK(GetIntoGame)()
 		}
 	}
 
+DBG("GetIntoGame: EXIT ent=%d team=%d origin=(%.1f,%.1f,%.1f) flags=0x%x movetype=%d solid=%d deadflag=%d effects=0x%x\n",
+        entindex(), m_iTeam,
+        pev->origin.x, pev->origin.y, pev->origin.z,
+        pev->flags, pev->movetype, pev->solid, pev->deadflag, pev->effects
+);
 	return true;
 }
 
