@@ -5328,10 +5328,15 @@ int CHalfLifeMultiplay::GetRarityOfKill(CBaseEntity *pKiller, CBasePlayer *pVict
 			if (weaponClass == WEAPONCLASS_SNIPERRIFLE && pKillerPlayer->m_iClientFOV == DEFAULT_FOV)
 				iRarity |= KILLRARITY_NOSCOPE;
 
-			// The killer player kills the victim through smoke
-			const Vector inEyePos = pKillerPlayer->EyePosition();
-			if (TheCSBots()->IsLineBlockedBySmoke(&inEyePos, &pVictim->pev->origin))
-				iRarity |= KILLRARITY_THRUSMOKE;
+			// CSBot rarity logic requires a valid CSBotManager.
+			// Skip this entirely when CSBots are disabled (e.g., using YaPB only).
+			if (AreBotsAllowed())
+			{
+				// The killer player kills the victim through smoke
+				const Vector inEyePos = pKillerPlayer->EyePosition();
+				if (TheCSBots()->IsLineBlockedBySmoke(&inEyePos, &pVictim->pev->origin))
+					iRarity |= KILLRARITY_THRUSMOKE;
+			}
 
 			// The killer player kills the victim while in air
 			if (!(pKillerPlayer->pev->flags & FL_ONGROUND))
